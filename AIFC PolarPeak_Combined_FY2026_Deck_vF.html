@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Polar Peak Creamery: FY2026 Board Deck &amp; Interactive Tools</title>
+<style>
+  @import url('https://cdnjs.cloudflare.com/ajax/libs/inter-ui/3.19.3/inter.css');
+
+  :root {
+    --cream: #F7F5F0;
+    --dairy-navy: #1B2A4A;
+    --dairy-navy-light: #2E4270;
+    --berry: #8C2D3F;
+    --mint: #3E7C6B;
+    --gold: #C08A2E;
+    --paper: #FFFFFF;
+    --grey-line: #DDD8CC;
+    --grey-text: #6B6558;
+    --red-flag: #A13D2B;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #2A2A2A; font-family: 'Inter', -apple-system, sans-serif; overflow: hidden; }
+
+  #deck-container { width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+
+  .slide {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--cream); display: none; flex-direction: column;
+    padding: 44px 64px 32px 64px; overflow-y: auto;
+  }
+  .slide.active { display: flex; }
+
+  .slide-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--berry); margin-bottom: 6px; }
+  .slide-title { font-size: 30px; font-weight: 800; color: var(--dairy-navy); letter-spacing: -0.01em; margin-bottom: 4px; line-height: 1.15; }
+  .slide-sub { font-size: 14px; color: var(--grey-text); margin-bottom: 20px; max-width: 950px; line-height: 1.5; }
+  .slide-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+  #nav {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; z-index: 100;
+    background: rgba(27,42,74,0.88); padding: 8px 14px; border-radius: 24px; align-items: center;
+  }
+  .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.35); cursor: pointer; transition: background 0.2s; }
+  .nav-dot.active { background: #F7F5F0; }
+  .nav-arrow { color: #F7F5F0; cursor: pointer; font-size: 13px; padding: 0 6px; user-select: none; font-weight: 600; }
+  .nav-arrow:hover { color: var(--gold); }
+  .slide-counter { color: rgba(255,255,255,0.6); font-size: 11px; padding: 0 6px; font-variant-numeric: tabular-nums; }
+
+  /* KPI cards - slide 1 */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi-card { background: var(--paper); border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(27,42,74,0.08); }
+  .kpi-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--grey-text); margin-bottom: 6px; }
+  .kpi-grid-values { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .kpi-2026 { font-size: 20px; font-weight: 800; color: var(--dairy-navy); letter-spacing: -0.01em; }
+  .kpi-3yr { font-size: 12px; color: var(--grey-text); }
+  .kpi-delta { font-size: 11.5px; font-weight: 700; margin-top: 2px; }
+  .kpi-delta.pos { color: var(--mint); }
+  .kpi-delta.neg { color: var(--berry); }
+  .kpi-delta.na { color: var(--grey-text); font-style: italic; font-weight: 500; }
+  .kpi-commentary { font-size: 11px; color: var(--grey-text); line-height: 1.4; margin-top: 8px; border-top: 1px solid var(--grey-line); padding-top: 8px; }
+
+  .mix-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 6px; }
+  .mix-card { background: var(--paper); border-radius: 10px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(27,42,74,0.08); }
+  .mix-card h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dairy-navy); margin-bottom: 12px; }
+  table.mix-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.mix-table th { text-align: right; font-weight: 700; color: var(--dairy-navy); padding: 5px 8px; border-bottom: 1.5px solid var(--dairy-navy); font-size: 11px; }
+  table.mix-table th:first-child { text-align: left; }
+  table.mix-table td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--grey-line); }
+  table.mix-table td:first-child { text-align: left; font-weight: 600; color: var(--dairy-navy); }
+  .na-note { font-size: 11px; color: var(--grey-text); font-style: italic; margin-top: 10px; }
+
+  /* Slide 2 - scenario comparison table (metrics as rows, scenarios as columns) */
+  .scen-compare-wrap { flex: 1; display: flex; flex-direction: column; }
+  table.scen-compare { width: 100%; border-collapse: collapse; font-size: 15px; flex: 1; }
+  table.scen-compare th { padding: 10px 14px; text-align: center; border-bottom: 2px solid var(--dairy-navy); vertical-align: top; }
+  table.scen-compare th.metric-head { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--grey-text); }
+  table.scen-compare th .scen-title { display: block; font-size: 15px; font-weight: 800; color: var(--dairy-navy); margin-bottom: 4px; }
+  table.scen-compare th .scen-prob { display: block; font-size: 11.5px; font-weight: 700; color: var(--gold); margin-bottom: 6px; }
+  table.scen-compare th .scen-assumption { display: block; font-size: 10.5px; font-weight: 400; color: var(--grey-text); line-height: 1.4; text-align: left; }
+  table.scen-compare th.base-col { background: var(--cream); border-left: 3px solid var(--dairy-navy); border-right: 3px solid var(--dairy-navy); border-top: 3px solid var(--dairy-navy); }
+  table.scen-compare td { padding: 11px 14px; text-align: center; border-bottom: 1px solid var(--grey-line); font-variant-numeric: tabular-nums; font-weight: 600; color: var(--dairy-navy); }
+  table.scen-compare td.metric-label { text-align: left; font-weight: 700; color: var(--grey-text); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  table.scen-compare tr.ebitda-row td { font-size: 17px; font-weight: 800; color: var(--berry); background: #FBF2EE; }
+  table.scen-compare tr.ebitda-row td.metric-label { color: var(--berry); }
+  table.scen-compare td.base-col { background: var(--cream); border-left: 3px solid var(--dairy-navy); border-right: 3px solid var(--dairy-navy); }
+  table.scen-compare tr:last-child td.base-col { border-bottom: 3px solid var(--dairy-navy); }
+
+  /* Slide 3 - left/right layout: comparison table left, waterfall right; constraints below at full width */
+  .slide3-top { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; min-height: 0; }
+  .compare-table-wrap { background: var(--paper); border-radius: 10px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(27,42,74,0.08); display: flex; flex-direction: column; }
+  .compare-table-wrap h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dairy-navy); margin-bottom: 12px; }
+  table.compare-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  table.compare-table th { text-align: right; font-weight: 700; color: var(--dairy-navy); padding: 8px 8px; border-bottom: 2px solid var(--dairy-navy); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  table.compare-table th:first-child { text-align: left; }
+  table.compare-table td { text-align: right; padding: 11px 8px; border-bottom: 1px solid var(--grey-line); font-variant-numeric: tabular-nums; }
+  table.compare-table td:first-child { text-align: left; font-weight: 600; color: var(--dairy-navy); }
+  .met-badge { display: inline-block; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+  .met-badge.met { background: #DCEEE5; color: var(--mint); }
+  .met-badge.not-met { background: #F5DEDA; color: var(--red-flag); }
+  .delta-pos { color: var(--mint); font-weight: 700; }
+  .delta-neg { color: var(--berry); font-weight: 700; }
+
+  .waterfall-panel { background: var(--paper); border-radius: 10px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(27,42,74,0.08); display: flex; flex-direction: column; }
+  .waterfall-panel h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dairy-navy); margin-bottom: 12px; }
+  .waterfall-panel svg { flex: 1; }
+
+  .constraint-panel { background: var(--dairy-navy); color: var(--cream); border-radius: 10px; padding: 18px 24px; font-size: 14px; line-height: 1.55; margin-top: 18px; }
+  .constraint-panel .constraint-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold); margin-bottom: 8px; }
+
+  /* Slide 4 - narrative */
+  .narrative-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; }
+  .narrative-card { background: var(--paper); border-radius: 10px; padding: 18px 22px; box-shadow: 0 1px 3px rgba(27,42,74,0.08); display: flex; flex-direction: column; }
+  .narrative-card h4 { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 10px; }
+  .narrative-card.control h4 { color: var(--mint); }
+  .narrative-card.no-control h4 { color: var(--berry); }
+  .narrative-card.long-term { grid-column: span 2; }
+  .narrative-card.long-term h4 { color: var(--gold); }
+  .action-item { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--grey-line); align-items: flex-start; }
+  .action-item:last-child { border-bottom: none; }
+  .action-bullet { color: var(--dairy-navy); font-weight: 800; flex-shrink: 0; font-size: 18px; line-height: 1.3; }
+  .action-lead { display: block; font-size: 16px; font-weight: 800; color: var(--dairy-navy); line-height: 1.3; }
+  .action-detail { display: block; font-size: 12.5px; color: var(--grey-text); line-height: 1.4; margin-top: 2px; }
+  .long-term .action-item { padding: 7px 0; }
+  .footnote { font-size: 10px; color: var(--grey-text); margin-top: 10px; line-height: 1.4; }
+
+  /* ============================================================
+     SCOPED STYLES: AI/ML VALIDATION SLIDE (namespaced .aiml-scope)
+     Custom properties redeclared here are intentionally scoped to
+     this subtree and do not affect the rest of the deck.
+     ============================================================ */
+  .aiml-scope {
+    --cream: #F7F5F0;
+    --navy: #1B2A4A;
+    --navy-soft: #2E4270;
+    --berry: #8C2D3F;
+    --mint: #3E7C6B;
+    --gold: #C08A2E;
+    --paper: #FFFFFF;
+    --line: #DDD8CC;
+    --grey: #6B6558;
+    display: flex;
+    flex-direction: column;
+    color: var(--navy);
+  }
+  .aiml-scope .eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--berry); margin-bottom: 6px; }
+  .aiml-scope h1 { font-size: 27px; font-weight: 800; letter-spacing: -0.01em; color: var(--navy); margin-bottom: 6px; line-height: 1.2; }
+  .aiml-scope .sub { font-size: 13.5px; color: var(--grey); line-height: 1.5; max-width: 1100px; margin-bottom: 18px; }
+
+  .aiml-scope .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; }
+  .aiml-scope .col { display: flex; flex-direction: column; gap: 14px; }
+
+  .aiml-scope .panel { background: var(--paper); border-radius: 10px; padding: 16px 20px; box-shadow: 0 1px 3px rgba(27,42,74,0.08); }
+  .aiml-scope .panel h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--navy); margin-bottom: 10px; }
+
+  .aiml-scope .method-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+  .aiml-scope .method-row:last-child { border-bottom: none; }
+  .aiml-scope .method-name { font-weight: 700; color: var(--navy); }
+  .aiml-scope .method-detail { font-size: 10.5px; color: var(--grey); display: block; margin-top: 1px; }
+  .aiml-scope .mape-val { font-weight: 800; font-size: 15px; font-variant-numeric: tabular-nums; min-width: 58px; text-align: right; }
+  .aiml-scope .mape-good { color: var(--mint); }
+  .aiml-scope .mape-bad { color: var(--berry); }
+  .aiml-scope tr.highlight-row, .aiml-scope .method-row.highlight { background: #EAF3EE; margin: 0 -20px; padding: 6px 20px; }
+
+  .aiml-scope .constraint-box { background: var(--navy); color: var(--cream); border-radius: 8px; padding: 11px 16px; font-size: 11.5px; line-height: 1.5; margin-top: 4px; }
+  .aiml-scope .constraint-box b { color: var(--gold); }
+
+  .aiml-scope table.elas-table { width: 100%; border-collapse: collapse; font-size: 10.8px; }
+  .aiml-scope table.elas-table th { text-align: left; font-weight: 700; color: var(--navy); padding: 5px 6px; border-bottom: 1.5px solid var(--navy); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .aiml-scope table.elas-table td { padding: 6px 6px; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.35; }
+  .aiml-scope table.elas-table td.driver-col { font-weight: 700; color: var(--navy); width: 20%; }
+  .aiml-scope table.elas-table td.stated-col { color: var(--grey); width: 15%; white-space: nowrap; }
+  .aiml-scope table.elas-table td.testable-col { width: 13%; font-weight: 700; }
+  .aiml-scope .testable-partial { color: var(--gold); }
+  .aiml-scope .testable-no { color: var(--berry); }
+  .aiml-scope .testable-weak { color: var(--grey); }
+  .aiml-scope .testable-confounded { color: var(--berry); }
+
+  .aiml-scope .model-select-box { background: #FBF2EA; border: 1px solid #E8CDA8; border-radius: 8px; padding: 12px 16px; font-size: 11.5px; line-height: 1.5; margin-top: 4px; }
+  .aiml-scope .model-select-box b { color: var(--gold); }
+
+  .aiml-scope .fit-stats-box { background: var(--navy); border-radius: 8px; padding: 12px 16px; margin-top: 8px; display: flex; align-items: center; gap: 18px; }
+  .aiml-scope .fit-stat { text-align: center; flex-shrink: 0; }
+  .aiml-scope .fit-stat .fit-value { font-size: 26px; font-weight: 800; color: var(--gold); line-height: 1; font-variant-numeric: tabular-nums; }
+  .aiml-scope .fit-stat .fit-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--cream); margin-top: 3px; }
+  .aiml-scope .fit-divider { width: 1px; align-self: stretch; background: rgba(247,245,240,0.25); }
+  .aiml-scope .fit-explain { font-size: 11px; color: var(--cream); line-height: 1.45; }
+
+  .aiml-scope .bottom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; }
+  .aiml-scope .action-panel { background: var(--paper); border-radius: 10px; padding: 14px 20px; box-shadow: 0 1px 3px rgba(27,42,74,0.08); }
+  .aiml-scope .action-panel h4 { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--mint); margin-bottom: 6px; }
+  .aiml-scope .action-panel p { font-size: 11.5px; color: var(--navy); line-height: 1.5; }
+  .aiml-scope .action-panel p b { color: var(--berry); }
+
+  .aiml-scope .footnote { font-size: 9.5px; color: var(--grey); margin-top: 12px; line-height: 1.4; }
+
+  /* ============================================================
+     SCOPED STYLES: CFO SIMULATOR SLIDES (namespaced .sim-scope)
+     ============================================================ */
+  .sim-scope {
+    --paper: #FBFAF7;
+    --card: #FFFFFF;
+    --ink: #16233D;
+    --ink-soft: #5B6577;
+    --line: #E4E1D8;
+    --navy: #16233D;
+    --navy-soft: #2E4270;
+    --accent: #2E7D5B;
+    --accent-soft: #E7F2EC;
+    --warn: #9A4B2F;
+    --warn-soft: #FBEDE6;
+    --neutral-fill: #F2F0EA;
+    color: var(--ink);
+  }
+  .sim-scope h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 6px; color: var(--navy); }
+  .sim-scope h2 { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--navy-soft); margin: 0 0 16px; }
+  .sim-scope .lede { font-size: 15px; line-height: 1.65; color: var(--ink-soft); max-width: 760px; }
+  .sim-scope .eyebrow { font-size: 11.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+
+  .sim-scope .brief-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; margin-top: 20px; }
+  .sim-scope .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px 26px; }
+  .sim-scope .card h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--navy-soft); margin: 0 0 14px; }
+  .sim-scope .feature-list { list-style: none; margin: 0; padding: 0; }
+  .sim-scope .feature-list li { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; line-height: 1.5; }
+  .sim-scope .feature-list li:last-child { border-bottom: none; }
+  .sim-scope .feature-tag { flex-shrink: 0; width: 84px; font-weight: 700; color: var(--navy); font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; padding-top: 1px; }
+  .sim-scope .feature-desc { color: var(--ink-soft); }
+
+  .sim-scope .scenario-strip { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .sim-scope .scenario-chip { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 14px; border-radius: 7px; background: var(--neutral-fill); font-size: 13px; }
+  .sim-scope .scenario-chip .name { font-weight: 600; color: var(--navy); }
+  .sim-scope .scenario-chip .ebitda { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+
+  .sim-scope .risk-list { margin: 0; padding: 0; list-style: none; }
+  .sim-scope .risk-list li { position: relative; padding: 10px 0 10px 20px; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); border-bottom: 1px solid var(--line); }
+  .sim-scope .risk-list li:last-child { border-bottom: none; }
+  .sim-scope .risk-list li::before { content: ''; position: absolute; left: 0; top: 17px; width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+
+  .sim-scope .sim-layout { display: grid; grid-template-columns: 340px 1fr; gap: 28px; align-items: start; }
+  .sim-scope .control-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 24px; position: sticky; top: 0; }
+  .sim-scope .control { margin-bottom: 26px; }
+  .sim-scope .control:last-child { margin-bottom: 0; }
+  .sim-scope .control-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .sim-scope .control-label span.name { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .sim-scope .control-label span.val { font-size: 13px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .sim-scope input[type="range"] { width: 100%; height: 4px; border-radius: 2px; background: var(--line); outline: none; -webkit-appearance: none; }
+  .sim-scope input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--navy); cursor: pointer; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  .sim-scope input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--navy); cursor: pointer; border: 2px solid white; }
+  .sim-scope .control-sub { font-size: 11px; color: var(--ink-soft); margin-top: 5px; line-height: 1.4; }
+  .sim-scope .reset-btn { width: 100%; margin-top: 6px; padding: 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--neutral-fill); color: var(--navy); font-family: 'Inter'; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .sim-scope .reset-btn:hover { background: var(--line); }
+
+  .sim-scope table.is-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .sim-scope table.is-table th { text-align: right; font-weight: 700; color: var(--navy); padding: 10px 12px; border-bottom: 2px solid var(--navy); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .sim-scope table.is-table th:first-child { text-align: left; }
+  .sim-scope table.is-table td { text-align: right; padding: 11px 12px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .sim-scope table.is-table td:first-child { text-align: left; font-weight: 600; color: var(--navy); }
+  .sim-scope table.is-table tr.total-row td { font-weight: 800; border-top: 2px solid var(--navy); border-bottom: none; padding-top: 14px; background: var(--accent-soft); }
+  .sim-scope table.is-table tr.spacer-row td { border: none; padding: 6px 0; }
+  .sim-scope .delta-pos { color: var(--accent); font-weight: 700; }
+  .sim-scope .delta-neg { color: var(--warn); font-weight: 700; }
+  .sim-scope .delta-zero { color: var(--ink-soft); }
+
+  .sim-scope .callout { margin-top: 20px; padding: 16px 18px; border-radius: 8px; background: var(--warn-soft); border: 1px solid #E8C9B8; font-size: 12.5px; line-height: 1.55; color: #6B3419; }
+  .sim-scope .callout b { color: var(--warn); }
+
+  .sim-scope .board-target-strip { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; padding: 12px 16px; border-radius: 8px; background: var(--navy); flex-wrap: wrap; }
+  .sim-scope .board-target-strip .bts-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.6); }
+  .sim-scope .board-target-strip .bts-item { font-size: 13px; color: #F7F5F0; }
+  .sim-scope .board-target-strip .bts-item b { font-variant-numeric: tabular-nums; }
+  .sim-scope .board-target-strip .sim-met-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10.5px; font-weight: 700; margin-left: 6px; }
+  .sim-scope .board-target-strip .sim-met-badge.met { background: #DCEEE5; color: #3E7C6B; }
+  .sim-scope .board-target-strip .sim-met-badge.not-met { background: #F5DEDA; color: #A13D2B; }
+
+  .sim-scope .prob-banner { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; font-weight: 700; }
+  .sim-scope .prob-banner.ok { background: var(--accent-soft); color: var(--accent); }
+  .sim-scope .prob-banner.warn { background: var(--warn-soft); color: var(--warn); }
+
+  .sim-scope table.scen-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sim-scope table.scen-table th { padding: 10px 10px; text-align: center; border-bottom: 2px solid var(--navy); font-size: 11px; }
+  .sim-scope table.scen-table th.metric-col { text-align: left; }
+  .sim-scope table.scen-table th .scen-name { display: block; font-weight: 700; color: var(--navy); font-size: 12px; margin-bottom: 8px; }
+  .sim-scope table.scen-table td { padding: 10px; text-align: center; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .sim-scope table.scen-table td.metric-col { text-align: left; font-weight: 600; color: var(--navy); }
+  .sim-scope table.scen-table th.weighted-col-head { background: var(--navy); color: #F7F5F0; border-left: 3px solid var(--navy); border-bottom: 2px solid var(--navy); }
+  .sim-scope table.scen-table th.weighted-col-head .scen-name { color: #F7F5F0; }
+  .sim-scope table.scen-table td.weighted-col { font-weight: 800; background: var(--accent-soft); border-left: 3px solid var(--navy); }
+
+  .sim-scope .prob-slider-cell input[type="range"] { width: 90px; }
+  .sim-scope .prob-slider-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .sim-scope .prob-slider-cell .prob-val { font-size: 12px; font-weight: 700; color: var(--accent); }
+  .sim-scope .base-lock-note { font-size: 10.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  .sim-scope footer.tool-footer { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 11px; color: var(--ink-soft); }
+
+  @media (max-width: 860px) {
+    .sim-scope .brief-grid { grid-template-columns: 1fr; }
+    .sim-scope .sim-layout { grid-template-columns: 1fr; }
+    .sim-scope .control-card { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<div id="deck-container">
+
+  <!-- SLIDE 1 -->
+  <div class="slide active" data-slide="0">
+    <div class="slide-eyebrow">Board Update</div>
+    <div class="slide-title">Q1 2026 Update</div>
+    <div class="slide-sub">Q1 2026 actuals versus the 3-year Q1 average (2023–2025), where that comparison can be computed from source data. Channel and product mix shown separately below.</div>
+    <div class="slide-body">
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">Volume (000L)</div>
+          <div class="kpi-grid-values"><span class="kpi-2026">1,690</span><span class="kpi-3yr">3yr avg: 1,528</span></div>
+          <div class="kpi-delta pos">+10.6%</div>
+          <div class="kpi-commentary">Volume beat the 3-year Q1 average by 10.6%, driven by an unusually mild spring.</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Average Price ($/L)</div>
+          <div class="kpi-grid-values"><span class="kpi-2026">$4.599</span><span class="kpi-3yr">3yr avg: $4.389</span></div>
+          <div class="kpi-delta pos">+4.8%</div>
+          <div class="kpi-commentary">Average price rose 4.8% above trend, reflecting planned list increases and firmer channel mix.</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Revenue ($000)</div>
+          <div class="kpi-grid-values"><span class="kpi-2026">$7,775</span><span class="kpi-3yr">3yr avg: $6,708</span></div>
+          <div class="kpi-delta pos">+15.9%</div>
+          <div class="kpi-commentary">Revenue outpaced the 3-year average by 15.9%, combining genuine volume growth with price gains.</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Gross Margin / EBITDA %</div>
+          <div class="kpi-grid-values"><span class="kpi-2026">35.9% / 9.0%</span><span class="kpi-3yr">3yr avg: n/a</span></div>
+          <div class="kpi-delta na">Not computable</div>
+          <div class="kpi-commentary">3-year average not computable — History tab has cost indices only, no dollar COGS or EBITDA.</div>
+        </div>
+      </div>
+
+      <div class="mix-section">
+        <div class="mix-card">
+          <h4>Channel Mix — Q1 2026 vs. 3-Year Average</h4>
+          <table class="mix-table">
+            <tr><th>Channel</th><th>Q1 2026</th><th>3yr Avg</th><th>Δ pts</th></tr>
+            <tr><td>Retail / Grocery</td><td>53.5%</td><td>55.0%</td><td>−1.5</td></tr>
+            <tr><td>Foodservice</td><td>30.5%</td><td>32.0%</td><td>−1.5</td></tr>
+            <tr><td>Export (Canada &amp; Mexico)</td><td>16.0%</td><td>13.0%</td><td>+3.0</td></tr>
+          </table>
+        </div>
+        <div class="mix-card">
+          <h4>Product Mix — Q1 2026</h4>
+          <table class="mix-table">
+            <tr><th>Product Line</th><th>Q1 2026</th><th>3yr Avg</th></tr>
+            <tr><td>Classic Pints</td><td>40.0%</td><td>n/a</td></tr>
+            <tr><td>Premium / Artisan Pints</td><td>25.0%</td><td>n/a</td></tr>
+            <tr><td>Novelties</td><td>20.0%</td><td>n/a</td></tr>
+            <tr><td>Foodservice Bulk Tubs</td><td>15.0%</td><td>n/a</td></tr>
+          </table>
+          <div class="na-note">3-year average not computable — no product-line breakout exists anywhere in the historical data (2023–2025).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2 -->
+  <div class="slide" data-slide="1">
+    <div class="slide-eyebrow">Sensitivity</div>
+    <div class="slide-title">How Could 2026 Unravel?</div>
+    <div class="slide-sub">Five FY2026 scenarios, each with its own weather, cost, and marketing assumptions. Probabilities per the board-approved scenario framework.</div>
+    <div class="slide-body">
+      <div class="scen-compare-wrap">
+        <table class="scen-compare" id="scen-compare-table"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3 -->
+  <div class="slide" data-slide="2">
+    <div class="slide-eyebrow">Optimization Result</div>
+    <div class="slide-title">2026 After Optimization, Under Base Case</div>
+    <div class="slide-sub">Scenario 6 (EBITDA-optimized commercial plan) versus the Board-approved FY2026 target.</div>
+    <div class="slide-body">
+      <div class="slide3-top">
+        <div class="compare-table-wrap">
+          <h4>Scenario 6 vs. Board Target</h4>
+          <table class="compare-table" id="compare-table"></table>
+        </div>
+        <div class="waterfall-panel">
+          <h4>EBITDA Bridge: Base Case → Scenario 6</h4>
+          <svg id="waterfall-chart" viewBox="0 0 700 420" style="width:100%; height:100%;"></svg>
+        </div>
+      </div>
+      <div class="constraint-panel">
+        <div class="constraint-title">Real Constraints Behind This Result</div>
+        Scenario 6's EBITDA gain is not free. <b>Production and cold-storage capacity</b> remain binding: even after the price-driven demand pullback, 450.7K liters still go unmet (down from 1,601.7K in Base Case) — the plant physically cannot serve everyone. <b>Hedging coverage</b> is at its practical ceiling (100% of dairy fat); no further cost protection is available without a new instrument. <b>Contractual pricing</b> with large accounts may cap how much of the modeled increase is achievable — this scenario assumes full pass-through. The trade-off: Scenario 6 gives up 862.6K liters of volume and $2.2M of revenue versus Base Case and target, respectively, to capture materially higher margin.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4 -->
+  <div class="slide" data-slide="3">
+    <div class="slide-eyebrow">Recommendation</div>
+    <div class="slide-title">Key Actions</div>
+    <div class="slide-sub">What management controls now, what it doesn't, and what the board should weigh for beyond FY2026.</div>
+    <div class="slide-body">
+      <div class="narrative-grid">
+        <div class="narrative-card control">
+          <h4>Short Term — Under Management Control</h4>
+          <div class="action-item"><span class="action-bullet">→</span><span><span class="action-lead">Raise price 5%/month, Apr–Dec</span><span class="action-detail">Compounds to +55% by December. The single largest lever, worth $5.3M of the $6.25M FY EBITDA gain, subject to contract and competitive limits.</span></span></div>
+          <div class="action-item"><span class="action-bullet">→</span><span><span class="action-lead">Reallocate marketing spend</span><span class="action-detail">Down ~68% Apr–Jul, redeployed above-plan into Aug–Dec (net −16% FY, $3.16M vs. $3.77M planned); worth $651K. The Aug increase lands in a still-constrained month, worth re-checking.</span></span></div>
+          <div class="action-item"><span class="action-bullet">→</span><span><span class="action-lead">Cut trade promotion to the floor</span><span class="action-detail">2% off list, 1 promoted week, all of Apr–Dec. Biggest cuts are Oct–Nov (was 4.5%, 2 weeks) despite no capacity constraint there; worth $233.5K.</span></span></div>
+          <div class="action-item"><span class="action-bullet">→</span><span><span class="action-lead">Extend dairy fat hedging to 100%</span><span class="action-detail">Up from 40%, locked at the same index (108.5) already secured on the first tranche; worth $65.8K, the smallest but safest lever.</span></span></div>
+        </div>
+        <div class="narrative-card no-control">
+          <h4>Short Term — Not Under Management Control</h4>
+          <div class="action-item"><span class="action-bullet">→</span><span><span class="action-lead">Summer temperature</span><span class="action-detail">Warmer weather lifts demand further, but the plant is already capacity-constrained in peak months — hotter summers mostly convert into more unmet demand, not more revenue.</span></span></div>
+        </div>
+        <div class="narrative-card long-term">
+          <h4>Long Term — For the Board to Consider</h4>
+          <div class="action-item"><span class="action-bullet">→</span><span><span class="action-lead">Capex for a 4th line</span><span class="action-detail">Adds 300K–500K liters of monthly capacity to capture demand the plant currently turns away.</span></span></div>
+          <div class="action-item"><span class="action-bullet">→</span><span><span class="action-lead">Shift mix toward Zero &amp; premium</span><span class="action-detail">Analyze whether these lines carry better margin per unit of scarce capacity.</span></span></div>
+          <div class="action-item"><span class="action-bullet">→</span><span><span class="action-lead">Pre-build ahead of peak season</span><span class="action-detail">Use Jan–Mar capacity headroom to build inventory before the summer shortfall hits.</span></span></div>
+          <div class="action-item"><span class="action-bullet">→</span><span><span class="action-lead">Consider third-party cold storage</span><span class="action-detail">If owned freezer capacity (620K liters) can't support a larger pre-build program.</span></span></div>
+        </div>
+      </div>
+      <div class="footnote">Source: PolarPeak_FY2026_Financial_Model_v6.xlsx and Q1 2026 P&amp;L actuals. Figures in $000 unless noted.</div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: AI/ML VALIDATION (appendix) -->
+  <div class="slide" data-slide="4">
+    <div class="slide-eyebrow">Model Governance</div>
+    <div class="slide-title">AI/ML Model Selection &amp; Validation</div>
+    <div class="slide-sub">A back-test against real Q1 2026 results, paired with a validation of the stated demand elasticities against three years of history.</div>
+    <div class="slide-body">
+      <div class="aiml-scope">
+        <div class="main-grid">
+          <div class="col">
+            <div class="panel">
+              <h3>Back-Test: Q1 2026 Forecast Accuracy by Method (MAPE)</h3>
+
+              <div class="method-row">
+                <div><span class="method-name">OLS regression, levels (original)</span><span class="method-detail">No seasonal term</span></div>
+                <div class="mape-val mape-bad">81.7%</div>
+              </div>
+              <div class="method-row">
+                <div><span class="method-name">XGBoost, levels (original)</span><span class="method-detail">7.9% MAPE in-sample (leave-one-out)</span></div>
+                <div class="mape-val mape-bad">74.7%</div>
+              </div>
+              <div class="method-row">
+                <div><span class="method-name">Seasonal-naive baseline</span><span class="method-detail">Q1 2025 actual as the Q1 2026 prediction</span></div>
+                <div class="mape-val mape-good">6.5%</div>
+              </div>
+              <div class="method-row">
+                <div><span class="method-name">Fourier-seasonal OLS regression</span><span class="method-detail">Sin/cos-of-month terms added</span></div>
+                <div class="mape-val mape-bad">62.3%</div>
+              </div>
+              <div class="method-row highlight">
+                <div><span class="method-name">OLS regression, YoY % change (fixed)</span><span class="method-detail">Regressed on year-over-year change</span></div>
+                <div class="mape-val mape-good">1.8%</div>
+              </div>
+              <div class="method-row">
+                <div><span class="method-name">XGBoost, YoY % change (fixed)</span><span class="method-detail">23 training rows after differencing</span></div>
+                <div class="mape-val mape-good">2.4%</div>
+              </div>
+
+              <div class="constraint-box">
+                <b>Root cause:</b> temperature and calendar month were collinear at this sample size. Anchoring to YoY change removed it.
+              </div>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="panel">
+              <h3>Elasticity Validation vs. History_2023_2025</h3>
+              <table class="elas-table">
+                <tr><th>Driver</th><th>Stated</th><th>Testable?</th><th>Finding</th></tr>
+                <tr><td class="driver-col">Temp elasticity, summer</td><td class="stated-col">+2.8%/1°F</td><td class="testable-col testable-partial">Partial</td><td>~1.4%/°F, weak significance</td></tr>
+                <tr><td class="driver-col">Temp elasticity, shoulder</td><td class="stated-col">+1.3%/1°F</td><td class="testable-col testable-partial">Partial</td><td>~1.3–4.5%/°F, spec-sensitive</td></tr>
+                <tr><td class="driver-col">Price elasticity, Retail</td><td class="stated-col">−1.4%/1% price</td><td class="testable-col testable-no">Not testable</td><td>Blended price, channel split circular</td></tr>
+                <tr><td class="driver-col">Price elasticity, Foodservice</td><td class="stated-col">−0.6%/1% price</td><td class="testable-col testable-no">Not testable</td><td>Indistinguishable from Retail</td></tr>
+                <tr><td class="driver-col">Marketing spend elasticity</td><td class="stated-col">Sqrt saturation, 0.35</td><td class="testable-col testable-confounded">Confounded</td><td>Proxy for season, not causal</td></tr>
+                <tr><td class="driver-col">Trade promotion lift</td><td class="stated-col">+1.1%/pt discount</td><td class="testable-col testable-weak">Weak</td><td>Near-zero once season controlled</td></tr>
+                <tr><td class="driver-col">Confidence elasticity, Foodservice</td><td class="stated-col">+0.15%/pt CCI</td><td class="testable-col testable-no">Not testable</td><td>Same channel-split limitation</td></tr>
+                <tr><td class="driver-col">Cannibalization, cost pass-through, FX</td><td class="stated-col">Various</td><td class="testable-col testable-no">Not testable</td><td>No historical analog, 2023–2025</td></tr>
+              </table>
+              <div class="model-select-box">
+                <b>Model selected:</b> parsimonious OLS regression — log volume on temperature anomaly, log price, log marketing spend, promotion depth; no seasonal term. Ridge/Lasso collapsed temperature to zero; XGBoost unused at 36 observations.
+              </div>
+              <div class="fit-stats-box">
+                <div class="fit-stat"><div class="fit-value">0.93</div><div class="fit-label">R²</div></div>
+                <div class="fit-divider"></div>
+                <div class="fit-stat"><div class="fit-value">7.7%</div><div class="fit-label">MAPE</div></div>
+                <div class="fit-divider"></div>
+                <div class="fit-explain">These two numbers show <b style="color:var(--gold);">model fit</b>: R² is the share of volume's variation the model explains; MAPE is the average size of its miss, in-sample.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-row">
+          <div class="action-panel">
+            <h4>Why the Two Findings Agree</h4>
+            <p>Same root cause — temperature and calendar month are collinear at 36 observations — and the same fix: anchor to a seasonal baseline first.</p>
+          </div>
+          <div class="action-panel">
+            <h4>Carried Forward as Assumption</h4>
+            <p>Retail/Foodservice price elasticity, Foodservice confidence, cannibalization, cost pass-through, and FX sensitivity are <b>not testable</b> here.</p>
+          </div>
+        </div>
+
+        <div class="footnote">MAPE = mean absolute percentage error. CCI = Consumer Confidence Index.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: CFO SIMULATOR - THE BUSINESS -->
+  <div class="slide" data-slide="5">
+    <div class="slide-eyebrow">Interactive Tool</div>
+    <div class="slide-title">CFO Simulator: The Business</div>
+    <div class="slide-sub">Explore the FY2026 model hands-on. This primer sets up the drivers before you move any levers.</div>
+    <div class="slide-body">
+      <div class="sim-scope">
+        <p class="lede">
+          Polar Peak is a mid-market ice cream manufacturer selling through Retail, Foodservice, and Export channels.
+          Q1 2026 came in 10% ahead of budget on an unusually mild spring, and the board needs to know how much of that
+          is durable versus weather. The FY2026 forecast models nine remaining months (Apr–Dec) using a driver-based
+          approach, not a black box, built on five factors: <b>temperature</b> (volume rises with summer heat),
+          <b>pricing</b> (elasticity by channel), <b>marketing spend</b> (diminishing returns), <b>trade promotion</b>
+          (discount depth and duration), and <b>production capacity</b> (a hard ceiling the plant cannot exceed).
+        </p>
+
+        <div class="brief-grid">
+          <div class="card">
+            <h3>What Drives the Forecast</h3>
+            <ul class="feature-list">
+              <li><span class="feature-tag">Temperature</span><span class="feature-desc">Warmer summers (Jun–Aug) lift volume most; shoulder months (Apr, May, Sep, Oct) react less; winter is roughly flat.</span></li>
+              <li><span class="feature-tag">Pricing</span><span class="feature-desc">Price increases raise revenue per unit but reduce volume, and the trade-off differs by channel (Retail customers are more price-sensitive than Foodservice).</span></li>
+              <li><span class="feature-tag">Marketing</span><span class="feature-desc">Spend lifts demand, but with diminishing returns; doubling the budget doesn't double the effect.</span></li>
+              <li><span class="feature-tag">Trade Spend</span><span class="feature-desc">Retailer discounts move volume, but every point of discount also cuts the price on units that would have sold anyway.</span></li>
+              <li><span class="feature-tag">Capacity</span><span class="feature-desc">The plant has a hard monthly production ceiling. In peak summer months, demand already exceeds what can be made, a real constraint, not a modeling choice.</span></li>
+              <li><span class="feature-tag">Hedging</span><span class="feature-desc">A share of dairy fat costs is locked at a fixed price through December. Spot dairy costs are expected to keep rising, so more coverage protects margin.</span></li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>Five FY2026 Scenarios</h3>
+            <div class="scenario-strip">
+              <div class="scenario-chip"><span class="name">Base Case</span><span class="ebitda">$5.3M EBITDA</span></div>
+              <div class="scenario-chip"><span class="name">Upside, Heatwave</span><span class="ebitda">$4.4M EBITDA</span></div>
+              <div class="scenario-chip"><span class="name">Downside, Cool &amp; Wet</span><span class="ebitda">$6.0M EBITDA</span></div>
+              <div class="scenario-chip"><span class="name">Input Cost Shock</span><span class="ebitda">$3.9M EBITDA</span></div>
+              <div class="scenario-chip"><span class="name">Macro Recession</span><span class="ebitda">$5.5M EBITDA</span></div>
+            </div>
+            <h3 style="margin-top:24px;">Key Risks</h3>
+            <ul class="risk-list">
+              <li>Production capacity is the binding constraint most months; price and volume plans can't outrun what the plant can physically make.</li>
+              <li>The Heatwave scenario has the <i>lowest</i> EBITDA of the upside cases, since hot weather also raises dairy input costs.</li>
+              <li>Several elasticity assumptions (channel-level pricing, launch cannibalization) could not be independently validated against three years of history.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: CFO SIMULATOR - RUN A SIMULATION -->
+  <div class="slide" data-slide="6">
+    <div class="slide-eyebrow">Interactive Tool</div>
+    <div class="slide-title">CFO Simulator: Run a Simulation</div>
+    <div class="slide-sub">Move any lever below. The income statement recalculates instantly, using the same monthly demand, capacity, and cost logic as the full FY2026 model.</div>
+    <div class="slide-body">
+      <div class="sim-scope">
+        <div class="board-target-strip" id="board-target-strip"></div>
+        <div class="sim-layout">
+          <div class="control-card">
+            <h2 style="margin-bottom:22px;">Levers</h2>
+
+            <div class="control">
+              <div class="control-label"><span class="name">Temperature</span><span class="val" id="tempVal">+0°F</span></div>
+              <input type="range" id="tempSlider" min="-5" max="5" step="1" value="0" oninput="simOnLeverChange()">
+              <div class="control-sub">Applies to summer months only (Jun–Aug), on top of the planned weather path.</div>
+            </div>
+
+            <div class="control">
+              <div class="control-label"><span class="name">Summer Pricing</span><span class="val" id="priceVal">+0.0%</span></div>
+              <input type="range" id="priceSlider" min="-10" max="10" step="0.5" value="0" oninput="simOnLeverChange()">
+              <div class="control-sub">Applied as a compounding step in each of Jun, Jul, Aug, Sep; each month's increase stacks on the prior month's already-higher price, on top of the planned +3% June increase. Volume responds via each channel's price elasticity, chained the same way.</div>
+            </div>
+
+            <div class="control">
+              <div class="control-label"><span class="name">Marketing Spend (YTG)</span><span class="val" id="mktgVal">+0.0%</span></div>
+              <input type="range" id="mktgSlider" min="-30" max="30" step="1" value="0" oninput="simOnLeverChange()">
+              <div class="control-sub">% change to total Apr–Dec marketing dollars, spread proportionally across the existing plan.</div>
+            </div>
+
+            <div class="control">
+              <div class="control-label"><span class="name">Trade Discount</span><span class="val" id="tradeVal">3.0%</span></div>
+              <input type="range" id="tradeSlider" min="0" max="8" step="0.5" value="3" oninput="simOnLeverChange()">
+              <div class="control-sub">Uniform trade promotion discount depth, applied Apr–Dec. Base Case uses a representative 3.0% (the real plan varies 2.0%–4.5% by month).</div>
+            </div>
+            <div class="control">
+              <div class="control-label"><span class="name">Dairy Fat Hedge</span><span class="val" id="hedgeVal">40%</span></div>
+              <input type="range" id="hedgeSlider" min="40" max="100" step="10" value="40" oninput="simOnLeverChange()">
+              <div class="control-sub">Share of dairy fat costs locked at a fixed rate, Apr–Dec. Base Case hedges 40%. Spot dairy costs rise steadily all year, so more coverage protects margin throughout the forecast period.</div>
+            </div>
+
+            <button class="reset-btn" onclick="simResetLevers()">Reset to Base Case</button>
+          </div>
+
+          <div>
+            <table class="is-table">
+              <tr>
+                <th>Metric</th>
+                <th>Base Case</th>
+                <th>After Change</th>
+                <th>Δ</th>
+              </tr>
+              <tbody id="is-body"></tbody>
+            </table>
+            <div class="callout" id="capacity-callout"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: CFO SIMULATOR - SCENARIO WEIGHTING -->
+  <div class="slide" data-slide="7">
+    <div class="slide-eyebrow">Interactive Tool</div>
+    <div class="slide-title">CFO Simulator: Scenario Weighting</div>
+    <div class="slide-sub">Set a probability for each non-Base scenario. Base Case automatically absorbs the remainder, so the five always sum to 100%.</div>
+    <div class="slide-body">
+      <div class="sim-scope">
+        <div class="prob-banner ok" id="prob-banner">Probabilities sum to 100%</div>
+        <div style="overflow-x:auto;">
+          <table class="scen-table" id="scen-table"></table>
+        </div>
+        <footer class="tool-footer">
+          Source: PolarPeak_FY2026_Financial_Model_v6.xlsx. This slide re-runs the full monthly demand → capacity → P&amp;L chain client-side for the live simulator two slides back; the scenario table here uses each scenario's FY totals from the workbook directly. Figures in $000 unless noted.
+        </footer>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="nav">
+  <span class="nav-arrow" onclick="prevSlide()">‹</span>
+  <div class="nav-dot active" data-idx="0" onclick="goToSlide(0)"></div>
+  <div class="nav-dot" data-idx="1" onclick="goToSlide(1)"></div>
+  <div class="nav-dot" data-idx="2" onclick="goToSlide(2)"></div>
+  <div class="nav-dot" data-idx="3" onclick="goToSlide(3)"></div>
+  <div class="nav-dot" data-idx="4" onclick="goToSlide(4)"></div>
+  <div class="nav-dot" data-idx="5" onclick="goToSlide(5)"></div>
+  <div class="nav-dot" data-idx="6" onclick="goToSlide(6)"></div>
+  <div class="nav-dot" data-idx="7" onclick="goToSlide(7)"></div>
+  <span class="nav-arrow" onclick="nextSlide()">›</span>
+  <span class="slide-counter" id="slide-counter">1 / 8</span>
+</div>
+
+<script>
+// ============================================================
+// BOARD UPDATE DATA & RENDERING (slides 0-3)
+// ============================================================
+const SCENARIOS = [
+  { name: 'Base Case', prob: 40, isBase: true,
+    assumption: "Central case: normal-to-slightly-warm summer (+2.0°F), commodity costs on base path.",
+    vol: 10279.8, price: 4.6674, rev: 47980.2, gm: 36.79, ebitda: 5326.9, em: 11.10 },
+  { name: 'Upside (Heatwave)', prob: 20,
+    assumption: "Hot, dry summer (+6.5°F) drives strong volume; tight milk supply raises dairy costs (+3%).",
+    vol: 10294.6, price: 4.6667, rev: 48041.8, gm: 34.81, ebitda: 4389.4, em: 9.14 },
+  { name: 'Downside (Cool & Wet)', prob: 15,
+    assumption: "Rainy summer (−4.0°F) suppresses impulse buying; marketing less effective, costs ease (−1%).",
+    vol: 10260.1, price: 4.6684, rev: 47898.7, gm: 38.25, ebitda: 5964.2, em: 12.45 },
+  { name: 'Input Cost Shock', prob: 15,
+    assumption: "Feed-grain / dairy supply disruption spikes milk fat and packaging costs (+9%), any weather.",
+    vol: 10279.8, price: 4.6674, rev: 47980.2, gm: 33.91, ebitda: 3947.1, em: 8.23 },
+  { name: 'Macro Recession', prob: 10,
+    assumption: "Confidence falls, trade-down to Classic Pints accelerates, Foodservice declines; costs ease (−2%).",
+    vol: 10202.2, price: 4.6685, rev: 47629.3, gm: 37.44, ebitda: 5514.3, em: 11.58 },
+];
+
+function renderScenarioTable() {
+  const metrics = [
+    { label: 'Volume (000L)', key: 'vol', fmt: v => v.toLocaleString('en-US',{maximumFractionDigits:0}) },
+    { label: 'Avg. Price ($/L)', key: 'price', fmt: v => '$'+v.toFixed(3) },
+    { label: 'Revenue ($000)', key: 'rev', fmt: v => '$'+v.toLocaleString('en-US',{maximumFractionDigits:0}) },
+    { label: 'Gross Margin %', key: 'gm', fmt: v => v.toFixed(1)+'%' },
+    { label: 'EBITDA ($000)', key: 'ebitda', fmt: v => '$'+v.toLocaleString('en-US',{maximumFractionDigits:0}), total: true },
+    { label: 'EBITDA Margin %', key: 'em', fmt: v => v.toFixed(1)+'%' },
+  ];
+
+  let headHtml = '<tr><th class="metric-head">Metric</th>';
+  SCENARIOS.forEach(s => {
+    headHtml += `<th class="${s.isBase ? 'base-col' : ''}">
+      <span class="scen-title">${s.name}</span>
+      <span class="scen-prob">${s.prob}% probability</span>
+      <span class="scen-assumption">${s.assumption}</span>
+    </th>`;
+  });
+  headHtml += '</tr>';
+
+  let bodyHtml = '';
+  metrics.forEach(m => {
+    bodyHtml += `<tr class="${m.total ? 'ebitda-row' : ''}"><td class="metric-label">${m.label}</td>`;
+    SCENARIOS.forEach(s => {
+      bodyHtml += `<td class="${s.isBase ? 'base-col' : ''}">${m.fmt(s[m.key])}</td>`;
+    });
+    bodyHtml += '</tr>';
+  });
+
+  document.getElementById('scen-compare-table').innerHTML = headHtml + bodyHtml;
+}
+
+function renderCompareTable() {
+  const rows = [
+    { label: 'Volume (000L)', s6: '9,417', board: 'n/a', delta: '—', deltaPct: '—', met: 'na' },
+    { label: 'Average Price ($/L)', s6: '$5.498', board: 'n/a', delta: '—', deltaPct: '—', met: 'na' },
+    { label: 'Revenue ($000)', s6: '$51,777', board: '$54,000', delta: '−$2,223', deltaPct: '−4.1%', met: 'not-met' },
+    { label: 'Gross Margin %', s6: '46.5%', board: '36.5%', delta: '+10.0pp', deltaPct: '+27.5%', met: 'met' },
+    { label: 'EBITDA ($000)', s6: '$11,577', board: '$5,400 (implied)', delta: '+$6,177', deltaPct: '+114.4%', met: 'met' },
+    { label: 'EBITDA Margin %', s6: '22.4%', board: '10.0%', delta: '+12.4pp', deltaPct: '+123.6%', met: 'met' },
+  ];
+  let html = '<tr><th>Metric</th><th>Scenario 6</th><th>Board Target</th><th>Δ</th><th>Δ %</th><th>Status</th></tr>';
+  rows.forEach(r => {
+    const deltaClass = r.delta.startsWith('−') || r.delta.startsWith('-') ? 'delta-neg' : (r.delta === '—' ? '' : 'delta-pos');
+    const badgeHtml = r.met === 'na' ? '<span style="color:#999; font-size:11px;">n/a</span>' :
+      `<span class="met-badge ${r.met}">${r.met === 'met' ? 'Met' : 'Not Met'}</span>`;
+    html += `<tr>
+      <td>${r.label}</td>
+      <td>${r.s6}</td>
+      <td>${r.board}</td>
+      <td class="${deltaClass}">${r.delta}</td>
+      <td class="${deltaClass}">${r.deltaPct}</td>
+      <td>${badgeHtml}</td>
+    </tr>`;
+  });
+  document.getElementById('compare-table').innerHTML = html;
+}
+
+function renderWaterfall() {
+  const steps = [
+    { label: 'Base Case', value: 5326.9, type: 'total' },
+    { label: '+ Pricing', value: 5299.0, type: 'increase' },
+    { label: '− Marketing', value: 651.4, type: 'increase' },
+    { label: '− Trade Spend', value: 233.5, type: 'increase' },
+    { label: '+ Hedging', value: 65.8, type: 'increase' },
+    { label: 'Scenario 6', value: 11576.6, type: 'total' },
+  ];
+  const chartLeft = 85, chartRight = 680, chartTop = 30, chartBottom = 340;
+  const chartW = chartRight - chartLeft, chartH = chartBottom - chartTop;
+  const maxVal = 12500;
+  const n = steps.length;
+  const slot = chartW / n;
+  const barW = slot * 0.62;
+
+  let svg = '';
+  for (let g = 0; g <= 5; g++) {
+    const y = chartBottom - (g/5)*chartH;
+    const val = Math.round((g/5)*maxVal);
+    svg += `<line x1="${chartLeft}" y1="${y}" x2="${chartRight}" y2="${y}" stroke="#E5E1D6" stroke-width="1"/>`;
+    svg += `<text x="${chartLeft-12}" y="${y+5}" font-size="14" fill="#6B6558" text-anchor="end">$${(val/1000).toFixed(0)}K</text>`;
+  }
+
+  let cumulative = 0;
+  steps.forEach((s, i) => {
+    const x = chartLeft + slot*i + (slot-barW)/2;
+    let barBottom, barTop, color;
+    if (s.type === 'total') {
+      barBottom = chartBottom - 0;
+      barTop = chartBottom - (s.value/maxVal)*chartH;
+      color = i === 0 ? '#1B2A4A' : '#8C2D3F';
+      cumulative = s.value;
+    } else {
+      const startCum = cumulative;
+      cumulative += s.value;
+      barTop = chartBottom - (cumulative/maxVal)*chartH;
+      barBottom = chartBottom - (startCum/maxVal)*chartH;
+      color = '#3E7C6B';
+    }
+    const h = Math.abs(barBottom - barTop);
+    const yTop = Math.min(barTop, barBottom);
+    svg += `<rect x="${x}" y="${yTop}" width="${barW}" height="${h}" fill="${color}" rx="4" opacity="0.92"/>`;
+    const labelY = yTop - 12;
+    const sign = s.type === 'increase' ? '+' : '';
+    svg += `<text x="${x+barW/2}" y="${labelY}" font-size="15" font-weight="700" fill="#1B2A4A" text-anchor="middle">${sign}$${Math.round(s.value).toLocaleString()}</text>`;
+    const words = s.label.split(' ');
+    if (words.length > 1) {
+      const mid = Math.ceil(words.length/2);
+      svg += `<text x="${x+barW/2}" y="${chartBottom+24}" font-size="14" fill="#1B2A4A" text-anchor="middle" font-weight="600">${words.slice(0,mid).join(' ')}</text>`;
+      svg += `<text x="${x+barW/2}" y="${chartBottom+42}" font-size="14" fill="#1B2A4A" text-anchor="middle" font-weight="600">${words.slice(mid).join(' ')}</text>`;
+    } else {
+      svg += `<text x="${x+barW/2}" y="${chartBottom+24}" font-size="14" fill="#1B2A4A" text-anchor="middle" font-weight="600">${s.label}</text>`;
+    }
+  });
+
+  document.getElementById('waterfall-chart').innerHTML = svg;
+}
+
+// ============================================================
+// MASTER DECK NAVIGATION (all 8 slides)
+// ============================================================
+let currentSlide = 0;
+const totalSlides = 8;
+function showSlide(idx) {
+  document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+  document.querySelector(`.slide[data-slide="${idx}"]`).classList.add('active');
+  document.querySelectorAll('.nav-dot').forEach(d => d.classList.remove('active'));
+  document.querySelector(`.nav-dot[data-idx="${idx}"]`).classList.add('active');
+  document.getElementById('slide-counter').textContent = `${idx+1} / ${totalSlides}`;
+  currentSlide = idx;
+}
+function goToSlide(idx) { showSlide(idx); }
+function nextSlide() { showSlide((currentSlide+1) % totalSlides); }
+function prevSlide() { showSlide((currentSlide-1+totalSlides) % totalSlides); }
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+  if (e.key === 'ArrowLeft') prevSlide();
+});
+
+// ============================================================
+// CFO SIMULATOR DATA & ENGINE (slides 5-7), namespaced sim*/SIM_*
+// All constants pulled directly from PolarPeak_FY2026_Financial_Model_v6.xlsx,
+// PnL_Base tab and Assumptions tab.
+// ============================================================
+const SIM_MONTHS = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const SIM_Q1_ACTUAL = {
+  volume: [471.9, 531.2, 687.3],
+  revenue: [2161.2, 2440.2, 3173.3],
+  cogs: [1392.1, 1585.1, 2003.4],
+  ebitda: [184.4, 195.6, 318.2],
+};
+SIM_Q1_ACTUAL.trade_mktg_sum = 133.3+65.3;
+
+const SIM_BASE = {
+  tempAnomaly: [1,1,2,2,2,1,1,0,0],
+  tempElasSummer: 0.028, tempElasShoulder: 0.013,
+  mktgCoef: 0.35, promoCoef: 0.011,
+  priceElasRetail: -0.014, priceElasFS: -0.006, priceElasExport: -0.010,
+  durableGrowth: 0.034,
+  mixRetail: [0.535,0.53,0.525,0.52,0.52,0.525,0.53,0.535,0.54],
+  mixFS: [0.305,0.30,0.295,0.295,0.295,0.295,0.295,0.295,0.295],
+  mixExport: [0.16,0.17,0.18,0.185,0.185,0.18,0.175,0.17,0.165],
+  vol2025: [843.4,1074.3,1403.0,1540.5,1366.4,1047.4,732.3,536.5,647.9],
+  launchVol: [0,18,32,42,45,38,28,22,24],
+  cannib: [0,0.15,0.20,0.22,0.22,0.20,0.18,0.15,0.15],
+  launchPrice: [0,5.35,5.35,5.35,5.35,5.35,5.35,5.35,5.35],
+  listPriceIncr: [0,0,0.03,0,0,0,0,0,0],
+  promoDepth: [0.02,0.025,0.03,0.03,0.025,0.04,0.045,0.045,0.025],
+  promoWeeks: [1,1,2,2,1,2,2,2,1],
+  maxCap: [900,980,1050,1050,1050,910,880,820,850],
+  freezerCap: 620,
+  janMarCap: [900,900,900],
+  prebuild: [90,360,210],
+  rateDairy: 1.4477, rateSugar: 0.3175, rateCocoa: 0.2376, ratePkg: 0.3707, rateLabor: 0.4061, rateFreight: 0.1353,
+  mar26MilkfatIdx: 107.5, mar26SugarIdx: 109.9, mar26PkgIdx: 115.5,
+  milkfatBase: [107.8,108.7,109.8,111.1,112.2,112.9,113.3,113.7,114.0],
+  sugarBase: [110,109.8,109.4,108.7,108.3,108.1,108.1,108.3,108.5],
+  pkgBase: [115.2,114.6,114.2,113.8,113.6,113.6,113.8,114.1,114.3],
+  hedgePct: 0.40, hedgeIdx: 108.5,
+  opexDistPct: 0.0783, opexSalesPct: 0.0390, opexGaPct: 0.0508, opexRdPct: 0.0102,
+  tpStorageMarkup: 0.50,
+  tradeMktg: [228,282,309,309,269,201,154,141,161],
+  brandMktg: [112,138,151,151,131,99,76,69,79],
+  mar26Price: 4.617,
+};
+
+// FY totals for all 5 scenarios, pulled directly from the workbook (used for the scenario weighting slide)
+const SIM_SCENARIOS = {
+  base:      { label: 'Base Case',        volume: 10279.8, avgPrice: 4.667, revenue: 47980.2, grossProfit: 17651.5, grossMargin: 0.3679, ebitda: 5326.9, ebitdaMargin: 0.1110 },
+  upside:    { label: 'Upside (Heatwave)', volume: 10294.6, avgPrice: 4.667, revenue: 48041.8, grossProfit: 16725.0, grossMargin: 0.3481, ebitda: 4389.4, ebitdaMargin: 0.0914 },
+  downside:  { label: 'Downside (Cool & Wet)', volume: 10260.1, avgPrice: 4.668, revenue: 47898.7, grossProfit: 18319.1, grossMargin: 0.3825, ebitda: 5964.2, ebitdaMargin: 0.1245 },
+  inputcost: { label: 'Input Cost Shock',  volume: 10279.8, avgPrice: 4.667, revenue: 47980.2, grossProfit: 16271.6, grossMargin: 0.3391, ebitda: 3947.1, ebitdaMargin: 0.0823 },
+  macro:     { label: 'Macro Recession',   volume: 10202.2, avgPrice: 4.669, revenue: 47629.3, grossProfit: 17834.1, grossMargin: 0.3744, ebitda: 5514.3, ebitdaMargin: 0.1158 },
+};
+
+function simRunSimulation(tempDelta, priceChangePct, mktgTotalDeltaPct, tradeDiscountPct, hedgePctOverride) {
+  const b = SIM_BASE;
+  const hedgePct = (hedgePctOverride !== undefined) ? hedgePctOverride : b.hedgePct;
+  const tempAnomaly = b.tempAnomaly.map((v,i) => {
+    const m = SIM_MONTHS[i];
+    return (m==='Jun'||m==='Jul'||m==='Aug') ? v + tempDelta : v;
+  });
+
+  const listPriceIncr = b.listPriceIncr.map((v,i) => {
+    const m = SIM_MONTHS[i];
+    return (m==='Jun'||m==='Jul'||m==='Aug'||m==='Sep') ? v + priceChangePct : v;
+  });
+
+  const baseCombinedMktg = b.tradeMktg.map((v,i)=>v+b.brandMktg[i]);
+  const baseTotalMktg = baseCombinedMktg.reduce((a,c)=>a+c,0);
+  const newTotalMktg = baseTotalMktg * (1 + mktgTotalDeltaPct);
+  const scaleFactor = newTotalMktg / baseTotalMktg;
+  const tradeMktg = b.tradeMktg.map(v => v * scaleFactor);
+  const brandMktg = b.brandMktg.map(v => v * scaleFactor);
+
+  const promoDepth = b.promoDepth.map(() => tradeDiscountPct);
+
+  let cumMult = 1;
+  const cumPriceMult = listPriceIncr.map(chg => { cumMult *= (1+chg); return cumMult; });
+
+  const netLaunchVol = b.launchVol.map((v,i) => v*(1-b.cannib[i]));
+
+  const q1MktgSeed = [SIM_Q1_ACTUAL.trade_mktg_sum || (133.3+65.3), (148.9+75.3), (194.2+92.5)];
+  const fullMktgHist = [...q1MktgSeed, ...tradeMktg.map((v,i)=>v+brandMktg[i])];
+
+  const demand = [];
+  for (let i=0;i<9;i++) {
+    const m = SIM_MONTHS[i];
+    const tempLift = (m==='Jun'||m==='Jul'||m==='Aug') ? b.tempElasSummer*tempAnomaly[i] :
+                      (m==='Apr'||m==='May'||m==='Sep'||m==='Oct') ? b.tempElasShoulder*tempAnomaly[i] : 0;
+    const trailing = fullMktgHist.slice(3+i-3, 3+i);
+    const avgTrailing = trailing.reduce((a,c)=>a+c,0)/3;
+    const totalMktgThis = tradeMktg[i]+brandMktg[i];
+    const mktgLift = 0.35*Math.pow(totalMktgThis/avgTrailing,0.5)-0.35;
+    const promoLift = promoDepth[i]*100*b.promoCoef*(b.promoWeeks[i]/4.3);
+    const cumSum = listPriceIncr.slice(0,i+1).reduce((a,c)=>a+c,0);
+    const priceEffect = (b.mixRetail[i]*b.priceElasRetail + b.mixFS[i]*b.priceElasFS + b.mixExport[i]*b.priceElasExport) * cumSum;
+    const totalLift = tempLift + mktgLift + promoLift + priceEffect;
+    const baseVol = b.vol2025[i] * (1+b.durableGrowth) * (1+totalLift);
+    demand.push(baseVol + netLaunchVol[i]);
+  }
+
+  let openingInv = 0;
+  for (let i=0;i<3;i++) {
+    const prod = Math.min(b.janMarCap[i], SIM_Q1_ACTUAL.volume[i] + b.prebuild[i]);
+    const avail = openingInv + prod;
+    const sold = Math.min(SIM_Q1_ACTUAL.volume[i], avail);
+    openingInv = openingInv + prod - sold;
+  }
+
+  const volSold=[], unmet=[], closingInv=[];
+  for (let i=0;i<9;i++) {
+    const freezerHeadroom = Math.max(0, b.freezerCap - openingInv);
+    const actualProd = Math.min(b.maxCap[i], demand[i]+freezerHeadroom);
+    const avail = openingInv + actualProd;
+    const sold = Math.min(demand[i], avail);
+    const lost = Math.max(0, demand[i]-avail);
+    const closing = openingInv + actualProd - sold;
+    volSold.push(sold); unmet.push(lost); closingInv.push(closing);
+    openingInv = closing;
+  }
+
+  const netPrice = [];
+  for (let i=0;i<9;i++) {
+    const cumIncr = listPriceIncr.slice(0,i+1).reduce((a,c)=>a+c,0);
+    const promoFrac = b.promoWeeks[i]/4.3;
+    netPrice.push(b.mar26Price*(1+cumIncr)*(1-promoDepth[i]*promoFrac));
+  }
+
+  let totalRevenue=0, totalVolSold=0;
+  const revenue = [];
+  for (let i=0;i<9;i++) {
+    const launchSold = Math.min(netLaunchVol[i], volSold[i]);
+    const exLaunchSold = volSold[i]-launchSold;
+    const rev = exLaunchSold*netPrice[i] + launchSold*b.launchPrice[i];
+    revenue.push(rev);
+    totalRevenue += rev; totalVolSold += volSold[i];
+  }
+
+  const cogsPerL = [];
+  for (let i=0;i<9;i++) {
+    const effMilkfat = hedgePct*b.hedgeIdx + (1-hedgePct)*b.milkfatBase[i];
+    const dairyRate = b.rateDairy*(effMilkfat/b.mar26MilkfatIdx);
+    const sugarRate = b.rateSugar*(b.sugarBase[i]/b.mar26SugarIdx);
+    const pkgRate = b.ratePkg*(b.pkgBase[i]/b.mar26PkgIdx);
+    cogsPerL.push(dairyRate+sugarRate+pkgRate+b.rateCocoa+b.rateLabor+b.rateFreight);
+  }
+
+  let totalCogs=0;
+  for (let i=0;i<9;i++) totalCogs += cogsPerL[i]*volSold[i];
+  const grossProfit = totalRevenue - totalCogs;
+
+  let tpStorageCost = 0;
+  for (let i=0;i<9;i++) {
+    const tpInv = Math.max(0, closingInv[i]-b.freezerCap);
+    tpStorageCost += tpInv*cogsPerL[i]*b.tpStorageMarkup;
+  }
+
+  const totalOpex = tradeMktg.reduce((a,c)=>a+c,0) + brandMktg.reduce((a,c)=>a+c,0) +
+    totalRevenue*(b.opexDistPct+b.opexSalesPct+b.opexGaPct+b.opexRdPct) + tpStorageCost;
+  const ebitda = grossProfit - totalOpex;
+
+  const fyVolume = SIM_Q1_ACTUAL.volume.reduce((a,c)=>a+c,0) + totalVolSold;
+  const fyRevenue = SIM_Q1_ACTUAL.revenue.reduce((a,c)=>a+c,0) + totalRevenue;
+  const fyCogs = SIM_Q1_ACTUAL.cogs.reduce((a,c)=>a+c,0) + totalCogs;
+  const fyGrossProfit = fyRevenue - fyCogs;
+  const fyEbitda = SIM_Q1_ACTUAL.ebitda.reduce((a,c)=>a+c,0) + ebitda;
+
+  const fyCapacity = b.janMarCap.reduce((a,c)=>a+c,0) + b.maxCap.reduce((a,c)=>a+c,0);
+
+  return {
+    fyCapacity, fyVolume, avgPrice: fyRevenue/fyVolume, fyRevenue, fyGrossProfit,
+    grossMargin: fyGrossProfit/fyRevenue, fyEbitda, ebitdaMargin: fyEbitda/fyRevenue,
+    fyUnmet: unmet.reduce((a,c)=>a+c,0)
+  };
+}
+
+const simBaseResult = simRunSimulation(0,0,0,0.03,0.40);
+
+// Board-approved FY2026 targets, per Board_Targets_FY26 tab. Closes the gap flagged
+// in the hackathon scorecard: the simulator previously never referenced these.
+const BOARD_TARGET = { revenue: 54000, ebitdaMargin: 0.10 };
+
+function simRenderBoardTargetStrip(current) {
+  const revMet = current.fyRevenue >= BOARD_TARGET.revenue;
+  const emMet = current.ebitdaMargin >= BOARD_TARGET.ebitdaMargin;
+  const revDelta = current.fyRevenue - BOARD_TARGET.revenue;
+  const emDelta = (current.ebitdaMargin - BOARD_TARGET.ebitdaMargin) * 100;
+  document.getElementById('board-target-strip').innerHTML = `
+    <span class="bts-label">vs. Board Target</span>
+    <span class="bts-item">Revenue $54.0M: <b>$${(current.fyRevenue/1000).toFixed(1)}M</b>
+      <span class="sim-met-badge ${revMet?'met':'not-met'}">${revMet?'Met':'Not Met'} (${revDelta>=0?'+':''}$${(revDelta/1000).toFixed(1)}M)</span>
+    </span>
+    <span class="bts-item">EBITDA Margin 10.0%: <b>${(current.ebitdaMargin*100).toFixed(1)}%</b>
+      <span class="sim-met-badge ${emMet?'met':'not-met'}">${emMet?'Met':'Not Met'} (${emDelta>=0?'+':''}${emDelta.toFixed(1)}pp)</span>
+    </span>
+  `;
+}
+
+function simOnLeverChange() {
+  const temp = parseFloat(document.getElementById('tempSlider').value);
+  const price = parseFloat(document.getElementById('priceSlider').value)/100;
+  const mktg = parseFloat(document.getElementById('mktgSlider').value)/100;
+  const trade = parseFloat(document.getElementById('tradeSlider').value)/100;
+  const hedge = parseFloat(document.getElementById('hedgeSlider').value)/100;
+
+  document.getElementById('tempVal').textContent = (temp>=0?'+':'') + temp + '°F';
+  document.getElementById('priceVal').textContent = (price>=0?'+':'') + (price*100).toFixed(1) + '%';
+  document.getElementById('mktgVal').textContent = (mktg>=0?'+':'') + (mktg*100).toFixed(1) + '%';
+  document.getElementById('tradeVal').textContent = (trade*100).toFixed(1) + '%';
+  document.getElementById('hedgeVal').textContent = (hedge*100).toFixed(0) + '%';
+
+  const result = simRunSimulation(temp, price, mktg, trade, hedge);
+  simRenderIncomeStatement(simBaseResult, result);
+  simRenderBoardTargetStrip(result);
+
+  const unmetDelta = result.fyUnmet - simBaseResult.fyUnmet;
+  const callout = document.getElementById('capacity-callout');
+  if (Math.abs(unmetDelta) > 5) {
+    const dir = unmetDelta > 0 ? 'increases' : 'decreases';
+    callout.innerHTML = `<b>Capacity note:</b> full-year unmet demand (orders the plant could not fill) ${dir} by ${simFmtNum(Math.abs(unmetDelta))}K liters versus Base Case, now ${simFmtNum(result.fyUnmet)}K liters total. When summer months are already at capacity, added demand (e.g. from warmer weather) mostly shows up here rather than in revenue.`;
+  } else {
+    callout.innerHTML = `<b>Capacity note:</b> full-year unmet demand is ${simFmtNum(result.fyUnmet)}K liters, essentially unchanged from Base Case. The plant is capacity-constrained in 6 of 9 forecast months regardless of these levers.`;
+  }
+}
+
+function simRenderIncomeStatement(base, current) {
+  const rows = [
+    { label: 'Volume (000L)', baseVal: base.fyVolume, curVal: current.fyVolume, fmt: simFmtNum, isPercent: false },
+    { blank: true },
+    { label: 'Average Price ($/L)', baseVal: base.avgPrice, curVal: current.avgPrice, fmt: simFmtPrice, isPercent: false, isPrice: true },
+    { label: 'Revenue ($000)', baseVal: base.fyRevenue, curVal: current.fyRevenue, fmt: simFmtDollar, isPercent: false },
+    { label: 'Gross Margin (%)', baseVal: base.grossMargin, curVal: current.grossMargin, fmt: simFmtPct, isPercent: true },
+    { label: 'EBITDA ($000)', baseVal: base.fyEbitda, curVal: current.fyEbitda, fmt: simFmtDollar, isPercent: false, total: true },
+    { label: 'EBITDA Margin (%)', baseVal: base.ebitdaMargin, curVal: current.ebitdaMargin, fmt: simFmtPct, isPercent: true, total: true },
+  ];
+  let html = '';
+  rows.forEach(r => {
+    if (r.blank) {
+      html += `<tr class="spacer-row"><td colspan="4">&nbsp;</td></tr>`;
+      return;
+    }
+    const deltaRaw = r.curVal - r.baseVal;
+    let deltaHtml;
+    if (r.isPrice) {
+      deltaHtml = Math.abs(deltaRaw) < 0.0005 ? '<span class="delta-zero">—</span>' :
+        `<span class="${deltaRaw>0?'delta-pos':'delta-neg'}">${deltaRaw>0?'+':''}$${deltaRaw.toFixed(3)}</span>`;
+    } else if (r.isConstant) {
+      deltaHtml = '<span class="delta-zero">—</span>';
+    } else {
+      deltaHtml = simFmtDelta(deltaRaw, r.isPercent);
+    }
+    html += `<tr class="${r.total?'total-row':''}">
+      <td>${r.label}</td>
+      <td>${r.fmt(r.baseVal)}</td>
+      <td>${r.fmt(r.curVal)}</td>
+      <td>${deltaHtml}</td>
+    </tr>`;
+  });
+  document.getElementById('is-body').innerHTML = html;
+}
+
+function simResetLevers() {
+  document.getElementById('tempSlider').value = 0;
+  document.getElementById('priceSlider').value = 0;
+  document.getElementById('mktgSlider').value = 0;
+  document.getElementById('tradeSlider').value = 3;
+  document.getElementById('hedgeSlider').value = 40;
+  simOnLeverChange();
+}
+
+const simScenarioKeys = ['upside','downside','inputcost','macro'];
+let simProbs = { upside: 0.20, downside: 0.15, inputcost: 0.15, macro: 0.10 };
+
+function simBaseProb() {
+  const sumOthers = simScenarioKeys.reduce((a,k) => a+simProbs[k], 0);
+  return Math.max(0, 1 - sumOthers);
+}
+
+function simRenderScenarioTable() {
+  const metrics = [
+    { label: 'Volume (000L)', key: 'volume', fmt: simFmtNum },
+    { label: 'Average Price ($/L)', key: 'avgPrice', fmt: (v)=>'$'+v.toFixed(3) },
+    { label: 'Revenue ($000)', key: 'revenue', fmt: simFmtDollar },
+    { label: 'Gross Margin (%)', key: 'grossMargin', fmt: simFmtPct },
+    { label: 'EBITDA ($000)', key: 'ebitda', fmt: simFmtDollar },
+    { label: 'EBITDA Margin (%)', key: 'ebitdaMargin', fmt: simFmtPct },
+  ];
+
+  const order = ['base','upside','downside','inputcost','macro'];
+  const bp = simBaseProb();
+
+  // Weighted average computed once up front so it can be appended as a column,
+  // not a bottom row.
+  const weighted = {};
+  metrics.forEach(m => {
+    let sum = 0;
+    order.forEach(k => {
+      const p = k === 'base' ? bp : simProbs[k];
+      sum += SIM_SCENARIOS[k][m.key] * p;
+    });
+    weighted[m.key] = sum;
+  });
+
+  let headHtml = '<tr><th class="metric-col">Metric</th>';
+  order.forEach(k => {
+    headHtml += `<th><span class="scen-name">${SIM_SCENARIOS[k].label}</span></th>`;
+  });
+  headHtml += '<th class="weighted-col-head"><span class="scen-name">Weighted<br>Average</span></th>';
+  headHtml += '</tr>';
+
+  let probRow = '<tr><td class="metric-col">Probability</td>';
+  order.forEach(k => {
+    if (k === 'base') {
+      probRow += `<td><div class="prob-slider-cell"><div class="prob-val" id="prob-base-display">${(bp*100).toFixed(0)}%</div><div class="base-lock-note">auto-balances</div></div></td>`;
+    } else {
+      probRow += `<td><div class="prob-slider-cell">
+        <input type="range" min="0" max="50" step="5" value="${simProbs[k]*100}" oninput="simOnProbChange('${k}', this.value)">
+        <div class="prob-val" id="prob-${k}-display">${(simProbs[k]*100).toFixed(0)}%</div>
+      </div></td>`;
+    }
+  });
+  probRow += '<td class="weighted-col">—</td>';
+  probRow += '</tr>';
+
+  let bodyHtml = '';
+  metrics.forEach(m => {
+    bodyHtml += `<tr><td class="metric-col">${m.label}</td>`;
+    order.forEach(k => {
+      bodyHtml += `<td>${m.fmt(SIM_SCENARIOS[k][m.key])}</td>`;
+    });
+    bodyHtml += `<td class="weighted-col">${m.fmt(weighted[m.key])}</td>`;
+    bodyHtml += '</tr>';
+  });
+
+  document.getElementById('scen-table').innerHTML = headHtml + probRow + bodyHtml;
+
+  const total = bp + simScenarioKeys.reduce((a,k)=>a+simProbs[k],0);
+  const banner = document.getElementById('prob-banner');
+  banner.className = 'prob-banner ok';
+  banner.textContent = `Probabilities sum to ${(total*100).toFixed(0)}% — Base Case automatically absorbs the remainder (${(bp*100).toFixed(0)}%)`;
+  if (bp < 0) {
+    banner.className = 'prob-banner warn';
+    banner.textContent = `Scenario probabilities exceed 100% — reduce one or more sliders. Base Case cannot go negative.`;
+  }
+}
+
+function simOnProbChange(key, value) {
+  simProbs[key] = parseFloat(value)/100;
+  const sumOthers = simScenarioKeys.reduce((a,k) => a+simProbs[k], 0);
+  if (sumOthers > 1) {
+    simProbs[key] = Math.max(0, simProbs[key] - (sumOthers - 1));
+  }
+  simRenderScenarioTable();
+}
+
+function simFmtNum(n) { return Math.round(n).toLocaleString('en-US'); }
+function simFmtDollar(n) { return '$' + simFmtNum(n) + 'K'; }
+function simFmtPrice(n) { return '$' + n.toFixed(3); }
+function simFmtPct(n) { return (n*100).toFixed(1) + '%'; }
+function simFmtDelta(val, isPercent) {
+  if (Math.abs(val) < (isPercent ? 0.0005 : 0.5)) return '<span class="delta-zero">—</span>';
+  const cls = val > 0 ? 'delta-pos' : 'delta-neg';
+  const sign = val > 0 ? '+' : '';
+  const text = isPercent ? sign + (val*100).toFixed(1) + 'pp' : sign + simFmtNum(val);
+  return `<span class="${cls}">${text}</span>`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderScenarioTable();
+renderCompareTable();
+renderWaterfall();
+simOnLeverChange();
+simRenderScenarioTable();
+</script>
+
+</body>
+</html>
